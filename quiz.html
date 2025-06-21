@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multiplayer Quiz Game</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #answers {
+      margin-top: 20px;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e0f7fa;
+      border-radius: 8px;
+      display: inline-block;
+      text-align: left;
+    }
+
+    .correct {
+      color: green;
+    }
+
+    .wrong {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Quiz Topic: {{ topic.replace("-", " ").title() }}</h2>
+
+  <p>
+    Room: <input type="text" id="room" placeholder="Enter room name">
+    <button onclick="joinRoom()">Join Room</button>
+  </p>
+
+  <div id="quiz" style="display: none;">
+    <p><strong>Question:</strong> What is the output of <code>print(2 + 2)</code>?</p>
+    <input type="text" id="answer" placeholder="Your answer">
+    <button onclick="submitAnswer()">Submit Answer</button>
+  </div>
+
+  <div id="answers"></div>
+
+  <script>
+    const socket = io();
+    let room = '';
+    const username = prompt("Enter your name:");
+
+    function joinRoom() {
+      room = document.getElementById('room').value.trim();
+      if (!room) {
+        alert("Please enter a room name.");
+        return;
+      }
+      socket.emit('join', { room, username });
+      document.getElementById('quiz').style.display = 'block';
+    }
+
+    function submitAnswer() {
+      const answer = document.getElementById('answer').value.trim();
+      if (!answer) {
+        alert("Please enter your answer.");
+        return;
+      }
+      socket.emit('answer', { room, username, answer });
+      document.getElementById('answer').value = '';
+    }
+
+    socket.on('status', function(data) {
+      alert(data.msg);
+    });
+
+    socket.on('results', function(data) {
+      const container = document.getElementById('answers');
+      container.innerHTML = '';  // clear previous
+
+      const resultBox = document.createElement('div');
+      resultBox.className = 'result';
+
+      const answerHeader = document.createElement('h3');
+      answerHeader.innerHTML = `✅ Correct Answer: <span class="correct">${data.correct}</span>`;
+      resultBox.appendChild(answerHeader);
+
+      data.details.forEach(detail => {
+        const p = document.createElement('p');
+        p.textContent = detail;
+        if (detail.includes('✅')) {
+          p.classList.add('correct');
+        } else {
+          p.classList.add('wrong');
+        }
+        resultBox.appendChild(p);
+      });
+
+      container.appendChild(resultBox);
+    });
+  </script>
+
+</body>
+</html>
