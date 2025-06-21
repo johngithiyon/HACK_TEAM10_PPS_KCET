@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Student Learning Style Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: #ffffffee;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      font-size: 14px;
+      color: #555;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, select {
+      padding: 10px;
+      margin-top: 5px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      background: #667eea;
+      color: #fff;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #5a67d8;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Student Learning Style Form</h2>
+
+    <!-- ✅ PURE HTML FORM -->
+    <form action="/submit" method="POST">
+      <label>Time Spent Studying (in minutes):</label>
+      <input type="number" name="time_spent" required min="1" placeholder="e.g. 45">
+
+      <label>Preference for Individual / Group Work:</label>
+      <select name="work_type" required>
+        <option value="">-- Select --</option>
+        <option value="individual">Individual</option>
+        <option value="group">Group</option>
+      </select>
+
+      <label>Attention Span Level (in hours):</label>
+      <input type="number" name="attention" required min="1" max="24" placeholder="e.g. 2">
+
+      <label>Number of Revisions per Topic:</label>
+      <input type="number" name="revisions" required min="0" placeholder="e.g. 3">
+
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+</body>
+</html>

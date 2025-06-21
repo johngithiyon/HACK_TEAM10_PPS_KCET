@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chatbot</title>
+  <style>
+    :root {
+      --bg-dark: #121421;
+      --bot-bg: #2c2f48;
+      --user-bg: #2c2f48;
+      --highlight: #8a3ffc;
+      --text-light: #f5f5f7;
+      --input-bg: #1e1f2f;
+      --shadow: rgba(138, 63, 252, 0.4);
+    }
+
+    .light-mode {
+      --bg-dark: #f9f9f9;
+      --bot-bg: #e0e0f5;
+      --user-bg: #d4d9ff;
+      --highlight: #4f46e5;
+      --text-light: #121421;
+      --input-bg: #e0e0e0;
+      --shadow: rgba(79, 70, 229, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: var(--bg-dark);
+      color: var(--text-light);
+    }
+
+    .layout {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      transition: all 0.4s ease;
+    }
+
+    .layout.sidebar-hidden .sidebar {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .layout.sidebar-hidden .main {
+      width: 100%;
+      max-width: 100%;
+      padding-left: 0;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--bg-dark);
+      padding: 20px;
+      border-right: 1px solid #2b2e42;
+      overflow-y: auto;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+
+    .sidebar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .clear-btn-icon {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      color: red;
+      cursor: pointer;
+    }
+
+    #searchHistory {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      background: var(--input-bg);
+      color: var(--text-light);
+      border: none;
+    }
+
+    .history-item {
+      background: var(--bot-bg);
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .history-item span:first-child {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-item:hover {
+      background-color: var(--highlight);
+      color: white;
+      transform: scale(1.02);
+      box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .history-item:hover .delete-history {
+      color: white;
+      transform: scale(1.1);
+    }
+
+    #searchHistory:focus {
+      outline: 2px solid var(--highlight);
+    }
+
+    .sidebar:hover {
+      box-shadow: inset -3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .delete-history {
+      color: red;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: calc(100% - 260px);
+      transition: width 0.4s ease;
+    }
+
+    .header {
+      padding: 16px;
+      background-color: var(--bot-bg);
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: 0 2px 10px var(--shadow);
+      position: relative;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+    }
+
+    .history-toggle {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .toggle-slider {
+      width: 60px;
+      height: 30px;
+      background-color: #444;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .icon {
+      font-size: 14px;
+    }
+
+    .ball {
+      width: 24px;
+      height: 24px;
+      background-color: white;
+      border-radius: 50%;
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      transition: transform 0.3s ease;
+    }
+
+    .light-mode .toggle-slider {
+      background-color: #ccc;
+    }
+
+    .light-mode .ball {
+      transform: translateX(30px);
+      background-color: #333;
+    }
+
+    .chat-container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      transition: width 0.4s ease;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .message .bubble {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 16px;
+      background: var(--bot-bg);
+      color: var(--text-light);
+    }
+
+    .bubble.typing::after {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      background-color: white;
+      border-radius: 50%;
+      margin-left: 6px;
+      animation: dots 1s infinite;
+    }
+
+    @keyframes dots {
+      0% { box-shadow: 0 0 0 white; }
+      25% { box-shadow: 4px 0 0 white; }
+      50% { box-shadow: 4px 0 0 white, 8px 0 0 white; }
+      100% { box-shadow: 4px 0 0 white, 8px 0 0 white, 12px 0 0 white; }
+    }
+
+    .user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .user .bubble {
+      background-color: var(--highlight);
+      color: white;
+    }
+
+    .bot {
+      align-self: flex-start;
+    }
+
+    .profile-pic {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .input-area {
+      padding: 16px;
+      background: var(--bg-dark);
+      border-top: 1px solid #1c1d2e;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      transition: width 0.4s ease;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      background-color: var(--bot-bg);
+      border-radius: 999px;
+      padding: 12px 16px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    #userInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px;
+      color: var(--text-light);
+    }
+
+    .voice-btn,
+    #sendBtn {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      font-size: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  
+    <div class="layout" id="layout">
+      <div class="sidebar">
+        <div class="sidebar-top">
+          <h2>History</h2>
+          <button class="clear-btn-icon" onclick="clearAllHistory()" title="Clear All">🗑️</button>
+        </div>
+        <input type="text" id="searchHistory" placeholder="Search history..." />
+        <div id="history"></div>
+      </div>
+  
+      <div class="main">
+        <div class="header">
+          KCET - Internship ChatBot
+          <div class="history-toggle" onclick="toggleSidebar()">📜</div>
+          <div class="theme-toggle" onclick="toggleTheme()">
+            <div class="toggle-slider">
+              <div class="icon">☀</div>
+              <div class="icon">🌙</div>
+              <div class="ball"></div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="chat-container" id="chatContainer">
+          <div class="message bot">
+            <img src="static/chatbot.jpeg" alt="KCET" class="profile-pic">
+            <div class="bubble">Hello! I'm KCET. Ask me anything about Internship in Machine Learning!</div>
+          </div>
+        </div>
+        <div class="input-area">
+          <div class="input-wrapper">
+            <input type="text" id="userInput" placeholder="Send a message..." />
+            <button class="voice-btn" onclick="startListening()">
+              <svg xmlns="http://www.w3.org/2000/svg" height="20" width="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14q-.825 0-1.413-.588Q10 12.825 10 12V6q0-.825.587-1.412Q11.175 4 12 4t1.413.588Q14 5.175 14 6v6q0 .825-.587 1.412Q12.825 14 12 14Zm-1 7v-2.05q-2.475-.35-4.037-2.163Q5.4 15.975 5.4 13.5h2.05q0 1.575 1.112 2.688Q9.675 17.3 11.25 17.3t2.688-1.112Q15.05 14.625 15.05 13.05H17.1q0 2.475-1.563 4.287Q13.975 18.65 11.5 18.95V21Z" />
+              </svg>
+            </button>
+            <button id="sendBtn">➤</button>
+          </div>
+        </div>
+      </div>
+  
+    <script>
+      const chatContainer = document.getElementById('chatContainer');
+      const userInput = document.getElementById('userInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const historyDiv = document.getElementById('history');
+  
+      function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+      }
+  
+      function toggleSidebar() {
+        document.getElementById('layout').classList.toggle('sidebar-hidden');
+      }
+  
+      function speak(text) {
+        const synth = window.speechSynthesis;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-IN';
+        synth.speak(utter);
+      }
+  
+      function appendMessage(text, sender = 'user', isHTML = false) {
+        const msg = document.createElement('div');
+        msg.classList.add('message', sender);
+        const avatar = document.createElement('img');
+        avatar.className = 'profile-pic';
+        avatar.src = sender === 'bot' ? 'static/chatbot.jpeg' : 'static/user2.png';
+  
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+  
+        if (sender === 'bot') {
+          bubble.classList.add('typing');
+          bubble.textContent = "Typing...";
+          setTimeout(() => {
+            bubble.classList.remove('typing');
+            bubble.innerHTML = isHTML ? text : text;
+            speak(bubble.innerText);
+          }, 800);
+        } else {
+          bubble.innerHTML = isHTML ? text : text;
+        }
+  
+        msg.appendChild(avatar);
+        msg.appendChild(bubble);
+        chatContainer.appendChild(msg);
+        msg.scrollIntoView({ behavior: 'smooth' });
+  
+        if (sender === 'user') {
+          const hist = document.createElement('div');
+          hist.className = 'history-item';
+          hist.innerHTML = `<span>${text.substring(0, 20)}...</span><span class="delete-history">✖</span>`;
+          historyDiv.prepend(hist);
+          hist.querySelector('.delete-history').addEventListener('click', (e) => {
+            e.stopPropagation();
+            hist.remove();
+            saveHistoryToLocalStorage();
+          });
+          saveHistoryToLocalStorage();
+        }
+      }
+  
+      function handleUserMessage(msgText) {
+        appendMessage(msgText, 'user');
+        userInput.value = '';
+        fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msgText })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (!data) return appendMessage("No response received.", 'bot');
+          let botHTML = `<p>${data.response || "I'm not sure how to respond to that."}</p>`;
+          if (data.download_url) {
+            botHTML += `<p><a href="${data.download_url}" download style="color: var(--highlight);" target="_blank">📄 Download Report</a></p>`;
+          }
+          if (data.image_url) {
+            botHTML += `<p><img src="${data.image_url}" alt="Day Image" style="max-width: 100%; border-radius: 8px;" /></p>`;
+          }
+          appendMessage(botHTML, 'bot', true);
+        })
+        .catch(err => {
+          appendMessage("Error connecting to server.", 'bot');
+          console.error(err);
+        });
+      }
+  
+      sendBtn.addEventListener('click', () => {
+        const msgText = userInput.value.trim();
+        if (msgText !== '') handleUserMessage(msgText);
+      });
+  
+      userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendBtn.click();
+      });
+  
+      function saveHistoryToLocalStorage() {
+        localStorage.setItem('sidebarHistory', historyDiv.innerHTML);
+      }
+  
+      function loadHistoryFromLocalStorage() {
+        const savedHistory = localStorage.getItem('sidebarHistory');
+        if (savedHistory) {
+          historyDiv.innerHTML = savedHistory;
+          attachDeleteEvents();
+        }
+        if (localStorage.getItem('theme') === 'light') {
+          document.body.classList.add('light-mode');
+        }
+      }
+  
+      function attachDeleteEvents() {
+        document.querySelectorAll('.delete-history').forEach(btn => {
+          btn.onclick = function (e) {
+            e.stopPropagation();
+            this.parentElement.remove();
+            saveHistoryToLocalStorage();
+          };
+        });
+      }
+  
+      document.getElementById('searchHistory').addEventListener('input', function () {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.history-item').forEach(item => {
+          const text = item.querySelector('span')?.innerText?.toLowerCase() || "";
+          item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+      });
+  
+      function clearAllHistory() {
+        if (confirm("Are you sure you want to clear all history?")) {
+          historyDiv.innerHTML = '';
+          localStorage.setItem('sidebarHistory', '');
+        }
+      }
+  
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = false;
+  
+      recognition.onresult = (event) => {
+        const voiceText = event.results[0][0].transcript;
+        userInput.value = voiceText;
+        sendBtn.click(); // auto-send after voice input
+      };
+  
+      recognition.onerror = (event) => {
+        alert("Voice recognition error: " + event.error);
+      };
+  
+      function startListening() {
+        recognition.start();
+      }
+  
+      window.onload = loadHistoryFromLocalStorage;
+    </script>
+  
+</body>
+</html>
